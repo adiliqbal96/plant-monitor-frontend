@@ -1,0 +1,62 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #fdfdfd;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+.status-box {
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+.message {
+    color: #333;
+    font-style: italic;
+}
+
+.plant-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 0;
+    list-style: none;
+    justify-items: center;
+}
+
+.plant-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    text-align: center;
+    width: 200px;
+}
+
+.plant-card img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.plant-card div {
+    padding: 10px;
+}
