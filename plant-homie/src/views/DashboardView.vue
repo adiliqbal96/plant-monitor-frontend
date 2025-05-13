@@ -1,39 +1,46 @@
 <template>
-  <div class="dashboard-container">
-    <h1 class="title">🌿 Plant Homie Dashboard</h1>
+  <div class="dashboard-wrapper">
+    <div class="dashboard-container">
+      <h1 class="title">🌿 Plant Homie Dashboard</h1>
 
-    <div class="grid">
-      <!-- Status Panel -->
-      <div class="card">
-        <h2>Status</h2>
-        <p><strong>Moisture:</strong> {{ moisture }}%</p>
-        <p><strong>Humidity:</strong> {{ humidity }}%</p>
-        <p><strong>Temperature:</strong> {{ temperature }}°C</p>
-        <p><strong>Last Watered:</strong> {{ lastWatered }}</p>
-      </div>
-
-      <!-- Actions Panel -->
-      <div class="card">
-        <h2>Actions</h2>
-        <button @click="waterPlant">💧 Water Plant</button>
-        <div>
-          <label>
-            <input type="checkbox" v-model="autoMode" @change="toggleAutoMode" />
-            Enable Auto-Mode
-          </label>
+      <div class="grid">
+        <!-- Status Panel -->
+        <div class="card">
+          <h2>Status</h2>
+          <p><strong>Moisture:</strong> {{ moisture }}%</p>
+          <p><strong>Humidity:</strong> {{ humidity }}%</p>
+          <p><strong>Temperature:</strong> {{ temperature }}°C</p>
+          <p><strong>Last Watered:</strong> {{ lastWatered }}</p>
         </div>
-        <p class="message">{{ message }}</p>
-      </div>
-    </div>
 
-    <!-- History Section -->
-    <div class="card history">
-      <h2>Recent History</h2>
-      <ul>
-        <li v-for="entry in history" :key="entry.id">
-          {{ entry.timestamp }} — {{ entry.action }}
-        </li>
-      </ul>
+        <!-- Actions Panel -->
+        <div class="card">
+          <h2>Actions</h2>
+          <button @click="waterPlant">💧 Water Plant</button>
+          <div>
+            <label>
+              <input type="checkbox" v-model="autoMode" @change="toggleAutoMode" />
+              Enable Auto-Mode
+            </label>
+          </div>
+          <p class="message">{{ message }}</p>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="card history">
+        <h2>Recent History</h2>
+        <ul>
+          <li v-for="entry in history" :key="entry.id" class="log-entry">
+            <div class="log-entry-content">
+              <div><strong>{{ entry.timestamp }}</strong></div>
+              <div>🌡 Temp: {{ entry.temp }}°C</div>
+              <div>💧 Moisture: {{ entry.moisture }}%</div>
+              <div>💨 Humidity: {{ entry.humidity }}%</div>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
@@ -57,6 +64,9 @@ export default {
     };
   },
   methods: {
+    format(value) {
+      return value !== undefined ? parseFloat(value).toFixed(1) : 'N/A';
+    },
     async fetchStatus() {
       try {
         const [moistureRes, humidityRes, tempRes] = await Promise.all([
@@ -65,9 +75,9 @@ export default {
           axios.get(`${API_BASE}/plantlog/temperature/1`)
         ]);
 
-        this.moisture = typeof moistureRes.data === 'number' ? moistureRes.data : moistureRes.data.moisture ?? 0;
-        this.humidity = typeof humidityRes.data === 'number' ? humidityRes.data : humidityRes.data.humidity ?? 0;
-        this.temperature = typeof tempRes.data === 'number' ? tempRes.data : tempRes.data.temperature ?? 0;
+        this.moisture = this.format(typeof moistureRes.data === 'number' ? moistureRes.data : moistureRes.data.moisture);
+        this.humidity = this.format(typeof humidityRes.data === 'number' ? humidityRes.data : humidityRes.data.humidity);
+        this.temperature = this.format(typeof tempRes.data === 'number' ? tempRes.data : tempRes.data.temperature);
 
         this.lastWatered = new Date().toLocaleString();
       } catch (err) {
@@ -82,7 +92,9 @@ export default {
         this.history.unshift({
           id: Date.now(),
           timestamp: this.lastWatered,
-          action: 'Watered manually'
+          temp: this.temperature,
+          moisture: this.moisture,
+          humidity: this.humidity
         });
       }, 1000);
     },
@@ -96,7 +108,9 @@ export default {
           ? res.data.map(log => ({
               id: log.plantLog_ID,
               timestamp: new Date(log.dato_Tid).toLocaleString(),
-              action: `Temp: ${log.temperatureLevel}°C, Moisture: ${log.waterLevel}%, Humidity: ${log.airHumidityLevel}%`
+              temp: this.format(log.temperatureLevel ?? log.temperature),
+              moisture: this.format(log.waterLevel),
+              humidity: this.format(log.airHumidityLevel)
             }))
           : [];
       } catch (err) {
@@ -112,9 +126,13 @@ export default {
 </script>
 
 <style scoped>
+.dashboard-wrapper {
+  display: flex;
+  justify-content: center;
+}
 .dashboard-container {
   max-width: 900px;
-  margin: 0 auto;
+  width: 100%;
   padding: 2rem;
 }
 .title {
@@ -137,8 +155,16 @@ export default {
   list-style: none;
   padding: 0;
 }
-.history li {
-  margin: 0.5rem 0;
+.log-entry {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+  border-radius: 8px;
+  text-align: center;
+}
+.log-entry-content > div {
+  margin: 0.2rem 0;
 }
 button {
   padding: 0.5rem 1rem;
