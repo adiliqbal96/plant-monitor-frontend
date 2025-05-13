@@ -8,15 +8,17 @@
       </div>
   
       <ul class="plant-list">
-        <li v-for="(plant, index) in customPlants" :key="index" class="plant-item">
-          {{ plant }}
-          <button @click="removePlant(index)" class="remove-button">❌</button>
+        <li v-for="plant in customPlants" :key="plant.plant_ID" class="plant-item">
+          {{ plant.plant_Name }} ({{ plant.plant_type }})
+          <button @click="removePlant(plant.plant_ID)" class="remove-button">❌</button>
         </li>
       </ul>
     </div>
   </template>
   
   <script>
+  import { getAllPlants, createPlant, deletePlant } from '@/services/PlantService';
+  
   export default {
     name: 'AddRemoveView',
     data() {
@@ -26,15 +28,38 @@
       };
     },
     methods: {
-      addPlant() {
-        if (this.newPlantName.trim()) {
-          this.customPlants.push(this.newPlantName.trim());
-          this.newPlantName = '';
+      async loadPlants() {
+        try {
+          const res = await getAllPlants();
+          this.customPlants = res.data;
+        } catch (err) {
+          console.error('Kunne ikke hente planter:', err);
         }
       },
-      removePlant(index) {
-        this.customPlants.splice(index, 1);
+      async addPlant() {
+        if (!this.newPlantName.trim()) return;
+        try {
+          await createPlant({
+            plant_Name: this.newPlantName.trim(),
+            plant_type: 'Custom',
+          });
+          this.newPlantName = '';
+          await this.loadPlants();
+        } catch (err) {
+          console.error('Kunne ikke tilføje plante:', err);
+        }
       },
+      async removePlant(id) {
+        try {
+          await deletePlant(id);
+          await this.loadPlants();
+        } catch (err) {
+          console.error('Kunne ikke slette plante:', err);
+        }
+      },
+    },
+    mounted() {
+      this.loadPlants();
     },
   };
   </script>
