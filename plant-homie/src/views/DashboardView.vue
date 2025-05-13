@@ -18,7 +18,7 @@
         <button @click="waterPlant">💧 Water Plant</button>
         <div>
           <label>
-            <input type="checkbox" v-model="autoMode" @change="toggleAutoMode">
+            <input type="checkbox" v-model="autoMode" @change="toggleAutoMode" />
             Enable Auto-Mode
           </label>
         </div>
@@ -41,6 +41,8 @@
 <script>
 import axios from 'axios';
 
+const API_BASE = 'https://planthomieapi-hfg3f5huercmcccz.westeurope-01.azurewebsites.net/api';
+
 export default {
   name: 'DashboardView',
   data() {
@@ -58,17 +60,18 @@ export default {
     async fetchStatus() {
       try {
         const [moistureRes, humidityRes, tempRes] = await Promise.all([
-          axios.get('https://localhost:5001/api/plantlog/soilmoisture/1'),
-          axios.get('https://localhost:5001/api/plantlog/airhumidity/1'),
-          axios.get('https://localhost:5001/api/plantlog/temperature/1')
+          axios.get(`${API_BASE}/plantlog/soilmoisture/1`),
+          axios.get(`${API_BASE}/plantlog/airhumidity/1`),
+          axios.get(`${API_BASE}/plantlog/temperature/1`)
         ]);
 
-        this.moisture = moistureRes.data;
-        this.humidity = humidityRes.data;
-        this.temperature = tempRes.data;
+        this.moisture = typeof moistureRes.data === 'number' ? moistureRes.data : moistureRes.data.moisture ?? 0;
+        this.humidity = typeof humidityRes.data === 'number' ? humidityRes.data : humidityRes.data.humidity ?? 0;
+        this.temperature = typeof tempRes.data === 'number' ? tempRes.data : tempRes.data.temperature ?? 0;
+
         this.lastWatered = new Date().toLocaleString();
       } catch (err) {
-        console.error('Kunne ikke hente status:', err);
+        console.error('Kunne ikke hente status fra Azure:', err);
       }
     },
     waterPlant() {
@@ -88,14 +91,16 @@ export default {
     },
     async loadHistory() {
       try {
-        const res = await axios.get('https://localhost:5001/api/plantlog');
-        this.history = res.data.map(log => ({
-          id: log.plantLog_ID,
-          timestamp: new Date(log.dato_Tid).toLocaleString(),
-          action: `Temp: ${log.temperatureLevel}°C, Moisture: ${log.waterLevel}%, Humidity: ${log.airHumidityLevel}%`
-        }));
+        const res = await axios.get(`${API_BASE}/plantlog`);
+        this.history = Array.isArray(res.data)
+          ? res.data.map(log => ({
+              id: log.plantLog_ID,
+              timestamp: new Date(log.dato_Tid).toLocaleString(),
+              action: `Temp: ${log.temperatureLevel}°C, Moisture: ${log.waterLevel}%, Humidity: ${log.airHumidityLevel}%`
+            }))
+          : [];
       } catch (err) {
-        console.error('Kunne ikke hente historik:', err);
+        console.error('Kunne ikke hente historik fra Azure:', err);
       }
     },
   },
@@ -126,7 +131,7 @@ export default {
   background: #f9f9f9;
   padding: 1.5rem;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 .history ul {
   list-style: none;
