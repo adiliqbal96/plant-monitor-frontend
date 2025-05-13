@@ -12,15 +12,26 @@
   </template>
   
   <script>
+  import axios from 'axios';
+  
   export default {
     name: 'HistoryView',
     data() {
       return {
-        history: [
-          { id: 1, timestamp: '2025-05-07 10:00', action: 'Watered manually' },
-          { id: 2, timestamp: '2025-05-06 18:30', action: 'Auto-mode watering' },
-        ],
+        history: [],
       };
+    },
+    async mounted() {
+      try {
+        const res = await axios.get('https://localhost:5001/api/plantlog');
+        this.history = res.data.map(log => ({
+          id: log.plantLog_ID,
+          timestamp: new Date(log.dato_Tid).toLocaleString(),
+          action: `Temp: ${log.temperatureLevel}°C, Moisture: ${log.waterLevel}%, Humidity: ${log.airHumidityLevel}%`
+        }));
+      } catch (err) {
+        console.error('Kunne ikke hente historik:', err);
+      }
     },
   };
   </script>
@@ -65,4 +76,3 @@
     color: #2c5282;
   }
   </style>
-  

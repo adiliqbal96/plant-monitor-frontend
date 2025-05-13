@@ -39,6 +39,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'DashboardView',
   data() {
@@ -53,12 +55,21 @@ export default {
     };
   },
   methods: {
-    fetchStatus() {
-      // Simulated values for now
-      this.moisture = Math.floor(Math.random() * 100);
-      this.humidity = Math.floor(Math.random() * 100);
-      this.temperature = 20 + Math.floor(Math.random() * 10);
-      this.lastWatered = new Date().toLocaleString();
+    async fetchStatus() {
+      try {
+        const [moistureRes, humidityRes, tempRes] = await Promise.all([
+          axios.get('https://localhost:5001/api/plantlog/soilmoisture/1'),
+          axios.get('https://localhost:5001/api/plantlog/airhumidity/1'),
+          axios.get('https://localhost:5001/api/plantlog/temperature/1')
+        ]);
+
+        this.moisture = moistureRes.data;
+        this.humidity = humidityRes.data;
+        this.temperature = tempRes.data;
+        this.lastWatered = new Date().toLocaleString();
+      } catch (err) {
+        console.error('Kunne ikke hente status:', err);
+      }
     },
     waterPlant() {
       this.message = 'Watering...';
@@ -75,11 +86,17 @@ export default {
     toggleAutoMode() {
       this.message = this.autoMode ? 'Auto-mode enabled' : 'Auto-mode disabled';
     },
-    loadHistory() {
-      this.history = [
-        { id: 1, timestamp: '2025-05-07 10:00', action: 'Watered manually' },
-        { id: 2, timestamp: '2025-05-06 18:30', action: 'Auto-mode watering' },
-      ];
+    async loadHistory() {
+      try {
+        const res = await axios.get('https://localhost:5001/api/plantlog');
+        this.history = res.data.map(log => ({
+          id: log.plantLog_ID,
+          timestamp: new Date(log.dato_Tid).toLocaleString(),
+          action: `Temp: ${log.temperatureLevel}°C, Moisture: ${log.waterLevel}%, Humidity: ${log.airHumidityLevel}%`
+        }));
+      } catch (err) {
+        console.error('Kunne ikke hente historik:', err);
+      }
     },
   },
   mounted() {
